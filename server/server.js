@@ -20,6 +20,7 @@ server.on('published', function(packet, client) {
 	console.log(packet.payload.length);
     console.log("-------------------------------------:");
 	console.log(util.inspect(packet, {showHidden: true, depth: null}));
+    console.log(packet.payload.toString());
 });
 // fired when a client subscribes to a topic
 server.on('subscribed', function(topic, client) {

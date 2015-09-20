@@ -35,6 +35,7 @@ def on_message(mosq, obj, msg):
             # myDB.push(payload['d'])
     else:
         print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
+        print "!!! non-ecg message"
 
 def on_publish(mosq, obj, mid):
     print("mid: " + str(mid))
