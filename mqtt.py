@@ -87,5 +87,6 @@ if __name__ == "__main__":
         print sys.argv[1]
         connectMQTT(sys.argv[1])
     else:
-        connectMQTT("tcp://52.10.125.94:1884");
+        connectMQTT("tcp://dev.cloudemist.com:1884");
+    #    connectMQTT("tcp://52.10.125.94:1884");
 

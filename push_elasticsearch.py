@@ -12,7 +12,7 @@ from datetime import datetime
 class MyElasticsearch:
     def __init__(self):
         self.es = Elasticsearch()
-        self.offset = 5
+        self.offset = 30000
         self.doc_index = "ecg"
 
     def getTimeStr(self, t):
@@ -22,14 +22,20 @@ class MyElasticsearch:
     # push data into elasticsearch
     #
     def push(self, data):
-        if "time_ecg" not in data:
-            print "wrong ecg data", data
+        if "ecg" not in data:
+            print "'ecg' not in data"
             return
-        time_ecg = float(data["time_ecg"])
-        ecg = data["ecg"].split(",")
+        if "start_ecg" not in data["ecg"]:
+            print "'start_ecg' not in data.ecg"
+            return
+        ecg = data["ecg"]
+        start_ecg = float(ecg["start_ecg"])
+        items = ecg["data"]
         doc_type = data["client_id"]
+
         # delete 5 seconds older data
-        oldTime = self.getTimeStr(time_ecg - 5000)
+        oldTime = self.getTimeStr(start_ecg - 5000)
+
         self.es.delete_by_query(index=self.doc_index, doc_type=doc_type, body={
             "query": {
                 "range": {
@@ -37,16 +43,14 @@ class MyElasticsearch:
                 }
             }
         })
-        
-        for item in ecg:
+        for item in items:
             doc = {}
             # convert ecg_time into readable format: "yyyy-mm-dd HH:MM:SS.sssZ"
-            doc["time"] = self.getTimeStr(time_ecg)
-            time_ecg += 8.4
-            # elasticsearch does not acept negtive item,
+            doc["time"] = self.getTimeStr(start_ecg)
+            start_ecg += 4.7
+            # elasticsearch does not accept negtive item,
             # add offset to become positive
             doc["ecg"] = int(item) + self.offset
-            print doc
-            print self.es.index(index=self.doc_index, doc_type=doc_type, id=int(time_ecg), body=doc)
+            print self.es.index(index=self.doc_index, doc_type=doc_type, id=int(start_ecg), body=doc)
 
 
