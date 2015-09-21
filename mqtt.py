@@ -8,14 +8,21 @@
     By Victor Weiping Liu
 
 '''
+import signal
 import sys, os, urlparse
 import json
 import paho.mqtt.client as paho
 
-import push_elasticsearch as es
+#import push_elasticsearch as es
+#db = es.MyElasticsearch()
 
-elasticsearch = es.MyElasticsearch()
+import live_ecg
+db = live_ecg.ecg_mysql()
 
+def signal_handler(signal, frame):
+    print("close db")
+    db.close()
+    sys.exit(0)
 
 # Define event callbacks
 def on_connect(mosq, obj, rc):
@@ -31,8 +38,21 @@ def on_message(mosq, obj, msg):
             print msg.playload
         else:
             #print payload['d']
-            elasticsearch.push(payload['d'])
+            # elasticsearch.push(payload['d'])
             # myDB.push(payload['d'])
+
+            # device_id, timestamp, json_str
+            data = payload['d']
+            if 'ecg' in data:
+                ecg = data['ecg']
+                if 'start_ecg' in ecg:
+                    values = (data['client_id'], ecg['start_ecg'], msg.payload)
+                    print values
+                    db.insert_row(values)
+                    values = (data['client_id'], ecg['start_ecg'] - (10 * 1000))
+                    db.delete_rows(values)
+            else:
+                print data
     else:
         print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
         print "!!! non-ecg message"
@@ -82,12 +102,15 @@ def connectMQTT(url):
         rc = mqttc.loop()
     print("rc: " + str(rc))
 
+signal.signal(signal.SIGINT, signal_handler)
+
 if __name__ == "__main__":
     print sys.argv
     if len(sys.argv) > 1:
         print sys.argv[1]
         connectMQTT(sys.argv[1])
     else:
+    #    connectMQTT("tcp://192.168.0.187:1883");
         connectMQTT("tcp://dev.cloudemist.com:1884");
     #    connectMQTT("tcp://52.10.125.94:1884");
 
